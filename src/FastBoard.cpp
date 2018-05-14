@@ -45,6 +45,9 @@ const std::array<FastBoard::square_t, 4> FastBoard::s_cinvert = {
     WHITE, BLACK, EMPTY, INVAL
 };
 
+std::map<int, std::array<std::array<unsigned short, FastBoard::MAXSQ>, NUM_SYMMETRIES>> FastBoard::m_symmetry_idx_map;
+std::mutex FastBoard::m_symmetry_idx_mutex;
+
 int FastBoard::get_boardsize(void) const {
     return m_boardsize;
 }
@@ -147,14 +150,22 @@ void FastBoard::reset_board(int size) {
     m_libs[MAXSQ]   = 16384;    /* we will subtract from this */
     m_next[MAXSQ]   = MAXSQ;
 
-    for (auto symmetry = 0; symmetry < NUM_SYMMETRIES; ++symmetry) {
-        m_symmetry_idx[symmetry][0] = 0; // Make sure the special value for the lack of ko stays unchanged.
-        for (auto y = 0; y < size; ++y) {
-            for (auto x = 0; x < size; ++x) {
-                const auto newvtx = get_symmetry({x, y}, symmetry, size);
-                m_symmetry_idx[symmetry][get_vertex(x, y)] = get_vertex(newvtx.first, newvtx.second);
+    std::lock_guard<std::mutex> lock(m_symmetry_idx_mutex);
+    const auto m_symmetry_idx_iter = m_symmetry_idx_map.find(size);
+    if (m_symmetry_idx_iter == m_symmetry_idx_map.end()) {
+        m_symmetry_idx = &m_symmetry_idx_map[size];
+        for (auto symmetry = 0; symmetry < NUM_SYMMETRIES; ++symmetry) {
+            (*m_symmetry_idx)[symmetry][0] = 0; // Make sure the special value for the lack of ko stays unchanged.
+            for (auto y = 0; y < size; ++y) {
+                for (auto x = 0; x < size; ++x) {
+                    const auto newvtx = get_symmetry({x, y}, symmetry, size);
+                    (*m_symmetry_idx)[symmetry][get_vertex(x, y)] = get_vertex(newvtx.first, newvtx.second);
+                }
             }
         }
+    }
+    else {
+        m_symmetry_idx = &m_symmetry_idx_iter->second;
     }
 }
 

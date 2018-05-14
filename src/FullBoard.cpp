@@ -73,7 +73,7 @@ std::uint64_t FullBoard::calc_hash(const int komove, const int symmetry) const {
 
     for (int i = 0; i < m_maxsq; i++) {
         if (m_square[i] != INVAL) {
-            res ^= Zobrist::zobrist[m_square[i]][m_symmetry_idx[symmetry][i]];
+            res ^= Zobrist::zobrist[m_square[i]][(*m_symmetry_idx)[symmetry][i]];
         }
     }
 
@@ -85,7 +85,7 @@ std::uint64_t FullBoard::calc_hash(const int komove, const int symmetry) const {
         res ^= Zobrist::zobrist_blacktomove;
     }
 
-    res ^= Zobrist::zobrist_ko[m_symmetry_idx[symmetry][komove]];
+    res ^= Zobrist::zobrist_ko[(*m_symmetry_idx)[symmetry][komove]];
 
     return res;
 }

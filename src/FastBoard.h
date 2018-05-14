@@ -22,6 +22,8 @@
 #include "config.h"
 
 #include <array>
+#include <map>
+#include <mutex>
 #include <queue>
 #include <string>
 #include <utility>
@@ -127,7 +129,9 @@ protected:
     int m_boardsize;
     int m_squaresize;
 
-    std::array<std::array<unsigned short, MAXSQ>, NUM_SYMMETRIES> m_symmetry_idx;
+    static std::map<int, std::array<std::array<unsigned short, MAXSQ>, NUM_SYMMETRIES>> m_symmetry_idx_map;
+    static std::mutex m_symmetry_idx_mutex;
+    decltype(m_symmetry_idx_map)::mapped_type* m_symmetry_idx;
 
     int calc_reach_color(int color) const;
 
