@@ -361,10 +361,16 @@ std::string Tuner<net_t>::tune_sgemm(const int m, const int n, const int k,
     auto failed_enqueue = 0;
     auto failed_error = 0;
 
+    std::shuffle(begin(valid_params), end(valid_params), Random::get_Rng());
+
     for (const auto& i : valid_params) {
         param_counter++;
 
         auto p = get_parameters_by_int(opts, i);
+
+        const auto param_str = parameters_to_string(p);
+        myprintf("(%u/%u) %s\n", param_counter, valid_params.size(), param_str.c_str());
+
         auto defines = parameters_to_defines(p);
 
         try {
