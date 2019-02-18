@@ -85,7 +85,7 @@ public:
     int count_pliberties(const int i) const;
     bool is_eye(const int color, const int vtx) const;
 
-    float area_score(float komi) const;
+    evals_t area_score(float komi) const;
 
     int get_prisoners(int side) const;
     bool black_to_move() const;
@@ -130,7 +130,7 @@ protected:
     int m_boardsize;
     int m_sidevertices;
 
-    int calc_reach_color(int color) const;
+    int calc_reach_color(int color, float score_increase, winrates_t& scores) const;
 
     int count_neighbours(const int color, const int i) const;
     void merge_strings(const int ip, const int aip);

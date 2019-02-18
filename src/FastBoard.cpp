@@ -254,7 +254,7 @@ void FastBoard::remove_neighbour(const int vtx, const int color) {
     }
 }
 
-int FastBoard::calc_reach_color(int color) const {
+int FastBoard::calc_reach_color(int color, float score_increase, winrates_t& scores) const {
     auto reachable = 0;
     auto bd = std::vector<bool>(m_numvertices, false);
     auto open = std::queue<int>();
@@ -263,6 +263,8 @@ int FastBoard::calc_reach_color(int color) const {
             auto vertex = get_vertex(i, j);
             if (m_state[vertex] == color) {
                 reachable++;
+                const auto xy = get_xy(vertex);
+                scores[xy.second * BOARD_SIZE + xy.first] += score_increase;
                 bd[vertex] = true;
                 open.push(vertex);
             }
@@ -277,6 +279,8 @@ int FastBoard::calc_reach_color(int color) const {
             auto neighbor = vertex + m_dirs[k];
             if (!bd[neighbor] && m_state[neighbor] == EMPTY) {
                 reachable++;
+                const auto xy = get_xy(neighbor);
+                scores[xy.second * BOARD_SIZE + xy.first] += score_increase;
                 bd[neighbor] = true;
                 open.push(neighbor);
             }
@@ -286,10 +290,12 @@ int FastBoard::calc_reach_color(int color) const {
 }
 
 // Needed for scoring passed out games not in MC playouts
-float FastBoard::area_score(float komi) const {
-    auto white = calc_reach_color(WHITE);
-    auto black = calc_reach_color(BLACK);
-    return black - white - komi;
+evals_t FastBoard::area_score(float komi) const {
+    winrates_t scores;
+    scores.fill(.5f);
+    auto white = calc_reach_color(WHITE, -.5f, scores);
+    auto black = calc_reach_color(BLACK, .5f, scores);
+    return {black - white - komi, scores};
 }
 
 void FastBoard::display_board(int lastmove) {

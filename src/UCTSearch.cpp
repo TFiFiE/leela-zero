@@ -174,6 +174,9 @@ void UCTSearch::update_root() {
     // Definition of m_playouts is playouts per search call.
     // So reset this count now.
     m_playouts = 0;
+    for (auto& m_point_sum : m_point_sums) {
+        m_point_sum.store(0);
+    }
 
 #ifndef NDEBUG
     auto start_nodes = m_root->count_nodes_and_clear_expand_state();
@@ -223,10 +226,10 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
 
     if (node->expandable()) {
         if (currstate.get_passes() >= 2) {
-            auto score = currstate.final_score();
+            auto score = currstate.final_score_and_points();
             result = SearchResult::from_score(score);
         } else {
-            float eval;
+            evals_t eval;
             const auto had_children = node->has_children();
             const auto success =
                 node->create_children(m_network, m_nodes, currstate, eval,
@@ -694,14 +697,17 @@ void UCTWorker::operator()() {
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
         auto result = m_search->play_simulation(*currstate, m_root);
-        if (result.valid()) {
-            m_search->increment_playouts();
-        }
+        m_search->increment_playouts(result);
     } while (m_search->is_running());
 }
 
-void UCTSearch::increment_playouts() {
-    m_playouts++;
+void UCTSearch::increment_playouts(const SearchResult& result) {
+    if (result.valid()) {
+        m_playouts++;
+        for (auto idx = size_t{0}; idx < NUM_INTERSECTIONS; ++idx) {
+            atomic_add(m_point_sums[idx], static_cast<double>(result.point_evals()[idx]));
+        }
+    }
 }
 
 int UCTSearch::think(int color, passflag_t passflag) {
@@ -740,9 +746,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
         auto currstate = std::make_unique<GameState>(m_rootstate);
 
         auto result = play_simulation(*currstate, m_root.get());
-        if (result.valid()) {
-            increment_playouts();
-        }
+        increment_playouts(result);
 
         Time elapsed;
         int elapsed_centis = Time::timediff_centis(start, elapsed);
@@ -847,9 +851,7 @@ void UCTSearch::ponder() {
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
         auto result = play_simulation(*currstate, m_root.get());
-        if (result.valid()) {
-            increment_playouts();
-        }
+        increment_playouts(result);
         if (cfg_analyze_tags.interval_centis()) {
             Time elapsed;
             int elapsed_centis = Time::timediff_centis(start, elapsed);

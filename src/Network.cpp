@@ -711,11 +711,14 @@ bool Network::probe_cache(const GameState* const state,
             const auto hash = state->get_symmetry_hash(sym);
             if (m_nncache.lookup(hash, result)) {
                 decltype(result.policy) corrected_policy;
+                decltype(result.point_winrates) corrected_point_winrates;
                 for (auto idx = size_t{0}; idx < NUM_INTERSECTIONS; ++idx) {
                     const auto sym_idx = symmetry_nn_idx_table[sym][idx];
                     corrected_policy[idx] = result.policy[sym_idx];
+                    corrected_point_winrates[idx] = result.point_winrates[sym_idx];
                 }
                 result.policy = std::move(corrected_policy);
+                result.point_winrates = std::move(corrected_point_winrates);
                 return true;
             }
         }
@@ -754,6 +757,8 @@ Network::Netresult Network::get_output(
             for (auto idx = size_t{0}; idx < NUM_INTERSECTIONS; idx++) {
                 result.policy[idx] +=
                     tmpresult.policy[idx] / static_cast<float>(NUM_SYMMETRIES);
+                result.point_winrates[idx] +=
+                    tmpresult.point_winrates[idx] / static_cast<float>(NUM_SYMMETRIES);
             }
         }
     } else {

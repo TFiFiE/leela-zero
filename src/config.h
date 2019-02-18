@@ -135,4 +135,7 @@ static constexpr auto SELFCHECK_PROBABILITY = 2000;
     #pragma warning(disable : 4996)
 #endif /* VC8+ */
 
+using winrates_t = std::array<float, NUM_INTERSECTIONS>;
+using evals_t = std::pair<float, winrates_t>;
+
 #endif

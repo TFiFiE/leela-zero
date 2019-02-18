@@ -56,6 +56,7 @@ public:
     void set_passes(int val);
     void increment_passes();
 
+    evals_t final_score_and_points() const;
     float final_score() const;
     std::uint64_t get_symmetry_hash(int symmetry) const;
 

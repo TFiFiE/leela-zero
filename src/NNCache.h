@@ -57,8 +57,12 @@ public:
         // winrate
         float winrate;
 
+        // 19x19 intersection winrates
+        winrates_t point_winrates;
+
         Netresult() : policy_pass(0.0f), winrate(0.0f) {
             policy.fill(0.0f);
+            point_winrates.fill(0.0f);
         }
     };
 

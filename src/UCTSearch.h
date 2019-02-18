@@ -50,23 +50,25 @@ public:
     SearchResult() = default;
     bool valid() const { return m_valid;  }
     float eval() const { return m_eval;  }
-    static SearchResult from_eval(float eval) {
-        return SearchResult(eval);
+    const winrates_t& point_evals() const { return m_point_evals;  }
+    static SearchResult from_eval(const evals_t& evals) {
+        return SearchResult(evals.first, evals.second);
     }
-    static SearchResult from_score(float board_score) {
-        if (board_score > 0.0f) {
-            return SearchResult(1.0f);
-        } else if (board_score < 0.0f) {
-            return SearchResult(0.0f);
+    static SearchResult from_score(const evals_t& board_score) {
+        if (board_score.first > 0.0f) {
+            return SearchResult(1.0f, board_score.second);
+        } else if (board_score.first < 0.0f) {
+            return SearchResult(0.0f, board_score.second);
         } else {
-            return SearchResult(0.5f);
+            return SearchResult(0.5f, board_score.second);
         }
     }
 private:
-    explicit SearchResult(float eval)
-        : m_valid(true), m_eval(eval) {}
+    explicit SearchResult(float eval, const winrates_t& point_evals)
+        : m_valid(true), m_eval(eval), m_point_evals(point_evals) {}
     bool m_valid{false};
     float m_eval{0.0f};
+    winrates_t m_point_evals;
 };
 
 namespace TimeManagement {
@@ -113,7 +115,7 @@ public:
     void set_visit_limit(int visits);
     void ponder();
     bool is_running() const;
-    void increment_playouts();
+    void increment_playouts(const SearchResult& result);
     std::string explain_last_think() const;
     SearchResult play_simulation(GameState& currstate, UCTNode* const node);
 
@@ -139,6 +141,7 @@ private:
     std::unique_ptr<UCTNode> m_root;
     std::atomic<int> m_nodes{0};
     std::atomic<int> m_playouts{0};
+    std::array<std::atomic<double>, NUM_INTERSECTIONS> m_point_sums{};
     std::atomic<bool> m_run{false};
     int m_maxplayouts;
     int m_maxvisits;

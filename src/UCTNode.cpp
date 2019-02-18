@@ -61,7 +61,7 @@ bool UCTNode::first_visit() const {
 bool UCTNode::create_children(Network & network,
                               std::atomic<int>& nodecount,
                               GameState& state,
-                              float& eval,
+                              evals_t& eval,
                               float min_psa_ratio) {
     // no successors in final state
     if (state.get_passes() >= 2) {
@@ -84,12 +84,16 @@ bool UCTNode::create_children(Network & network,
 
     // DCNN returns winrate as side to move
     m_net_eval = raw_netlist.winrate;
+    eval.second = raw_netlist.point_winrates;
     const auto to_move = state.board.get_to_move();
     // our search functions evaluate from black's point of view
     if (state.board.white_to_move()) {
         m_net_eval = 1.0f - m_net_eval;
+        for (auto& point_eval : eval.second) {
+            point_eval = 1.0f - point_eval;
+        }
     }
-    eval = m_net_eval;
+    eval.first = m_net_eval;
 
     std::vector<Network::PolicyVertexPair> nodelist;
 
